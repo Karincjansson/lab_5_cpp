@@ -35,14 +35,15 @@ String& String::operator=(const String& rhs)//this could be the issue
 	{
 		return *this;
 	}
-	if(this !=&rhs)
+	if(str_capacity<rhs.str_size)
 	{
 		delete[] data_;
-		str_size = rhs.str_size;
-		str_capacity = rhs.str_capacity;
+		this->str_capacity = rhs.str_capacity;
 		data_ = new char[str_capacity];
-		std::copy(rhs.data_, rhs.data_ + str_size, data_);
 	}
+	this->str_size = rhs.str_size;
+	std::memcpy(data_, rhs.data_,str_size);
+	Invariant();
 	return *this;
 }
 char& String::operator[](size_t i)
