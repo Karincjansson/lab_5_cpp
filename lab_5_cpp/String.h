@@ -8,6 +8,11 @@ class String
 {
 
 public:
+	size_t str_size;
+	size_t str_capacity;
+	char* data_;// pekare till array av tecken
+
+
 	String();
 	~String();
 	String(const String& rhs);
@@ -23,10 +28,8 @@ public:
 	friend bool operator==(const String& lhs, const String& rhs);
 	const char* data() const;
 	friend std::ostream& operator<<(std::ostream& out, const String& rhs);
-private:
-	char* data_;// pekare till array av tecken
-	size_t str_size;
-	size_t str_capacity;
+	
+	
 
 
 	void Invariant();

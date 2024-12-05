@@ -1,33 +1,40 @@
 #include "String.h"
 #include <cassert>
 #include<iostream>
-String::String(): str_size(0), str_capacity(0), data_(nullptr)
+String::String(): str_size(0), str_capacity(0), data_(new char[1]{})
 {
 	Invariant();
 }
 String::~String()//destructor
 {
+	Invariant();
 	delete[] data_;//lol något mer men...
 	
 }
 //CopyConstructor
-String::String(const String& rhs): str_size(rhs.str_size), str_capacity(rhs.str_capacity)
+String::String(const String& rhs) : str_size(rhs.str_size), str_capacity(rhs.str_capacity),data_(new char[str_capacity] {})
 {
-	data_ = new char[str_capacity];
-	std::copy(rhs.data_, rhs.data_ + str_size, data_);
-
+	//data_ = new char[str_capacity];
+	//std::copy(rhs.data_, rhs.data_ + str_size, data_);*/
+	std::memcpy(data_, rhs.data_, str_size);
 	Invariant();
 	
 }
-String::String(const char* cstr)
+String::String(const char* cstr):str_size(strlen(cstr)), str_capacity(str_size+10), data_(new char[str_capacity] {})
 {
 	data_ = new char[str_capacity];
 	std::memcpy(data_, cstr, str_size);
 	Invariant();
 }
 
-String& String::operator=(const String& rhs)
+String& String::operator=(const String& rhs)//this could be the issue
 {
+	Invariant();
+
+	if(this==&rhs)
+	{
+		return *this;
+	}
 	if(this !=&rhs)
 	{
 		delete[] data_;
@@ -45,6 +52,8 @@ char& String::operator[](size_t i)
 void String::Invariant()
 {
 	//huh?
+	assert(str_capacity >= 0);
+	assert(str_size >= 0);
 	assert(str_size <= str_capacity);
 }
 size_t String::size()const
@@ -57,15 +66,23 @@ size_t String::capacity()const
 }
 void String::push_back(char c)
 {
+	Invariant();// they said so....
+
 	if(str_size==str_capacity)
 	{
-		reserve(str_capacity == 0 ? 1 : str_capacity * 2);
+		
+		reserve(str_capacity == 0 ? 1 : str_capacity * 2);// if capacity is 0 then reserve 1 otherwise reserve capacity*2
 	}
+
+
 	data_[str_size++]=c;
 	Invariant();
 
 }
-void String::reserve(size_t new_capacity) {
+void String::reserve(size_t new_capacity) 
+{
+
+
 	if (new_capacity > str_capacity)
 	{
 		std::cout << "Reserving memory: " << new_capacity << " bytes" << std::endl;
@@ -83,10 +100,13 @@ bool operator!=(const String& lhs, const String rhs)
 }
 bool operator==(const String& lhs, const String& rhs)
 {
-	if (lhs.size() != rhs.size()) { return false; }
+	if (lhs.size() != rhs.size())
+	{ return false; }
 
-	for(size_t i=0;i<lhs.size();++i){
-		if (lhs[i]!=rhs[i]) {return false;}}
+	for(size_t i=0;i<lhs.size();++i)
+	{	if (lhs[i]!=rhs[i]) 
+	       {return false;}
+	}
 
 	return true;
 }
