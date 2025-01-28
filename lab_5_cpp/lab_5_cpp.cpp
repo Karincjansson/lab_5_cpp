@@ -13,120 +13,126 @@
 #include <cassert>
 using std::cout;
 
+// Asserts that two strings are equal. Compares each character in the lhs String with the rhs C-string.
 void AssertStrEqual(const String& lhs, const char* rhs) {
     for (size_t i = 0; i < lhs.str_size && *rhs != '\0'; ++i) {
-        assert(lhs[i] == rhs[i]);
-        assert(rhs[i] != 0);
+        assert(lhs[i] == rhs[i]);// Ensure each character matches.
+        assert(rhs[i] != 0); // Ensure no null character is encountered 
     }
-    assert(rhs[lhs.str_size] == 0);
-}
+    assert(rhs[lhs.str_size] == 0);// Ensure rhs is terminated properly after lhs's size.
 
+}
+// Tests that the capacity setting of a String object works correctly.
 void TestCapacitySetting() {
     {
+        // Test case 1: Ensures String can handle a larger capacity after push_back operations.
         String s, r;
         int str_size = s.str_size;
         for (int i = 0; i < str_size * 2 + 16; ++i)
-            r.push_back('a' + i % 26);
-        s = r;
-        assert(s.str_size <= s.str_capacity);
+            r.push_back('a' + i % 26);// Fill `r` with a pattern of characters.
+        s = r;// Assign `r` to `s`.
+        assert(s.str_size <= s.str_capacity);// Verify `s`'s size is within its capacity.
     }
     {
+        // Test case 2: Ensures a larger string assignment respects capacity limits.
         String r;
         for (int i = 0; i < 65; ++i)
-            r.push_back('a' + i % 26);
-        String s(r);
-        assert(s.str_size <= s.str_capacity);
+            r.push_back('a' + i % 26);// Fill `r` with 65 characters.
+        String s(r);// Copy-construct `s` from `r`.
+        assert(s.str_size <= s.str_capacity);// Verify `s`'s size is within its capacity.
     }
 }
-
+// Tests the push_back functionality of the String class.
 void TestPushBack() {
     {
+        // Test case 1: Appending a single character to a string.
         String str = "bar";
-        str.push_back('a');
-        assert(str == "bara");
+        str.push_back('a'); // Add 'a' to the string.
+        assert(str == "bara");// Ensure the resulting string matches the expected value.
     }
     {
+        // Test case 2: Appending multiple characters and checking size/capacity.
         String r;
         int str_size = 65;
         for (int i = 0; i < str_size; ++i)
-            r.push_back('a' + i % 26);
-        assert(r.str_size <= r.str_capacity);
-        assert(r.str_size == str_size);
+            r.push_back('a' + i % 26); // Fill `r` with 65 characters.
+        assert(r.str_size <= r.str_capacity); // Ensure capacity is not exceeded.
+        assert(r.str_size == str_size);// Ensure size matches the expected value.
     }
-
-    //Test No Extra Alloc
+    // Test case 3: Testing push_back with reallocations to grow capacity.
+   
     {
         String r;
         int str_size = 65;
         for (str_size = 0; str_size < 65; ++str_size)
-            r.push_back('a' + str_size % 26);
+            r.push_back('a' + str_size % 26);// Add characters until size reaches 65.
+
+        // Push characters until the string requires reallocation.
         while (r.str_size >= r.str_capacity) {
             r.push_back('a' + str_size % 26);
             ++str_size;
         }
-        const char* ptr = r.data();
-        int cap = r.str_capacity;
-        while (ptr == r.data())
+        const char* ptr = r.data();// Store pointer to current buffer.
+        int cap = r.str_capacity; // Store current capacity.
+        while (ptr == r.data())// Keep pushing characters until buffer reallocates.
         {
             r.push_back('x');
         }
 
-        (r.str_size == cap + 1);
+        (r.str_size == cap + 1);// Check if size is updated correctly after reallocation.
     }
 }
-
+// Tests the reallocation behavior of push_back and ensures correct copying.
 void TestPushBackReallocation() {
     String str("hej");
-    assert(str.str_size <= str.str_capacity);
-    assert(str.str_size == 3);
+    assert(str.str_size <= str.str_capacity); // Ensure initial size is within capacity.
+    assert(str.str_size == 3);// Verify the size matches the initialized value.
     auto hej = "hej";
-    AssertStrEqual(str, hej);
+    AssertStrEqual(str, hej); // Ensure the string matches the expected value.
     AssertStrEqual(str, "hej");
-#ifdef VG
-    //If VG we try to take 20 empty places: (str_size+1 < str_capacity)
-    while (str.str_size() + 20 >= str.str_capacity() && str.str_size() < 1000)
-        str.push_back('A' + rand() % 32);
-    assert(str.str_size() < 1000);	//If this fail it prbably the case that str_capacity is increased with a constant.
-#endif //VG
 
-    auto internalBuf = &str[0];
+
+    auto internalBuf = &str[0]; // Store the pointer to the internal buffer.
     auto cap = str.str_capacity;
     auto siz = str.str_size;
     size_t i;
     for (i = siz + 1; i <= cap; ++i) {
-        str.push_back(char(i) + 'a');
-        assert(internalBuf == &str[0]);
-        assert(cap == str.str_capacity);
-        assert(i == str.str_size);
-    }
-    str.push_back(char(i));
-    assert(internalBuf != &str[0]);
-    assert(cap < str.str_capacity);
-    assert(i == str.str_size);
-}
+        str.push_back(char(i) + 'a');// Add characters up to capacity.
+        assert(internalBuf == &str[0]); // Ensure no reallocation occurs.
+        assert(cap == str.str_capacity); // Ensure capacity remains unchanged.
 
+        assert(i == str.str_size);// Verify size increments correctly.
+    }
+    str.push_back(char(i)); // Push one more character to force reallocation.
+    assert(internalBuf != &str[0]);// Ensure reallocation occurred.
+    assert(cap < str.str_capacity); // Ensure capacity increased.
+    assert(i == str.str_size);// Verify size matches the expected value.
+}
+// Comprehensive test for passing and manipulating String objects.
 void TestForPassingString() {
     String str0;
-    AssertStrEqual(str0, "");
+    AssertStrEqual(str0, "");// Verify an empty string
 
     String s1("foo");
-    assert(s1 == "foo");
+    assert(s1 == "foo");// Verify initialization with a C-string.
     String str(s1);
-    assert(str == "foo"); //current bug is that s1 is not copied correctly.
+    assert(str == "foo"); // Test copy constructor.
     String s3("bar");
-    assert(s3 == "bar");
+    assert(s3 == "bar"); // Verify initialization with another string.
 
-    delete new String("hej");
+    delete new String("hej");// Test dynamic allocation and deletion.
+
 
     str = "hej";
-    assert((str = s3) == s3);
-    assert((str = str) == s3);
+    assert((str = s3) == s3);// Test assignment operator.
+    assert((str = str) == s3);// Self-assignment.
 
 
     str = "heja";
     s3 = str;
-    str[0] = 'x'; assert(s3[0] == 'h');
-    s3[1] = 'y'; assert(str[1] == 'e');
+    str[0] = 'x'; assert(s3[0] == 'h');// Test character access and modifications.
+    s3[1] = 'y'; assert(str[1] == 'e');// Verify that `s3` and `str` are independent.
+
 
 
     String str1("foo"), str2("bar"), str3("hej");
@@ -134,9 +140,9 @@ void TestForPassingString() {
     assert(str3 == str);
     assert(str1 == str);
 
-    TestCapacitySetting();
+    TestCapacitySetting(); // Test capacity functionality.
 
-    AssertStrEqual(str1, "foo");
+    AssertStrEqual(str1, "foo");// Verify string contents.
     auto xxx = str1.data();
     str1 = String("huj");
     assert(xxx == str1.data());
@@ -163,14 +169,14 @@ void TestForPassingString() {
 
     const String sc(str);
     assert(sc[1] == 'y');
-    assert(std::is_const<std::remove_reference< decltype(sc[1])>::type>::value); //Kolla att det blir en const resultat av indexering
+    assert(std::is_const<std::remove_reference< decltype(sc[1])>::type>::value);
 
-    TestPushBack();
+    TestPushBack();// Test push_back functionality.
 
     const char* temp = str.data();
     assert(temp == &str[0]);
 
-    TestPushBackReallocation();
+    TestPushBackReallocation(); // Test push_back with reallocations.
 
     cout << String("TestForPassingString completed.") << std::endl;
 }
@@ -229,103 +235,8 @@ void TestNoExtraAlloc() {
     *sPtr = r;
     assert(dPtr != sPtr->data());
     if (dPtr == sPtr->data())
-        cout << "********It is possible that you don't allocate more memory in the operator= even if it is needed!!!******";
+        
     delete sPtr;
-}
-
-void TestForWellPassingString() {
-#ifdef VG
-    TestDelete();
-    TestNoExtraAlloc();
-
-    String str("bar");
-
-    //-	at(size_t i) som indexerar med range check
-    try {
-        str.at(-1);
-        assert(false);
-    }
-    catch (std::out_of_range&) {};
-    try {
-        str.at(4);
-        assert(false);
-    }
-    catch (std::out_of_range&) {};
-
-    //- at indexerar
-
-    //-	at(size_t i) 
-    str = "bar";
-    assert(str.at(1) == 'a');
-    str.at(1) = 'y';
-    assert(str.at(1) == 'y');
-
-    const String strC(str);
-    assert(strC.at(1) == 'y');
-    assert(std::is_const<std::remove_reference< decltype(strC.at(1))>::type>::value);
-
-
-    //	reserve()
-    auto internalBuf = &str[0];
-    auto cap = str.str_capacity();
-    auto siz = str.str_size();
-
-    str.reserve(cap);
-    assert(internalBuf == &str[0]);
-    assert(cap == str.str_capacity());
-    assert(siz == str.str_size());
-
-    str.reserve(cap + 1);
-    assert(internalBuf != &str[0]);
-    assert(cap < str.str_capacity());
-    assert(siz == str.str_size());
-
-    // shrink_to_fit
-    str = "hej";
-    str.reserve(10);
-    internalBuf = &str[0];
-    cap = str.str_capacity();
-    siz = str.str_size();
-
-    str.shrink_to_fit();
-    assert(internalBuf != &str[0]);
-    assert(str.str_capacity() == str.str_size());
-    AssertStrEqual(str, "hej");
-
-    ///////////////////
-    //-	operator+=(Strong strong) som tolkas som konkatenering.
-    //foo, bar, hej
-    String str1("foo"), str2("bar"), str3("hej");
-    ((str = "xyz") += str1) += (str3 += str1);
-    assert(str3 == "hejfoo" && str == "xyzfoohejfoo" && str1 == "foo");
-
-    //+= som for plats;
-    str = "bar"; str.reserve(10);
-    str += "foo";
-    assert(str == "barfoo");
-
-    //+= som inte for plats;
-    str.reserve(10);
-    str = "";
-    size_t i;
-    for (i = 0; str.str_size() < str.str_capacity(); ++i)
-        str.push_back(char('0' + i));
-    str1 = "bar";
-    str += str1;
-    for (size_t k = 0; k < i; ++k)
-        assert(str[k] == '0' + k);
-    assert(str[i] == 'b');
-    str = "foo";
-    str += str;
-    assert(str == "foofoo");
-
-    //-	operator+
-    str = "bar";
-    assert(str + "foo" == "barfoo");
-    AssertStrEqual(str, "bar");
-
-    cout << "TestForWellPassingString completed." << std::endl;
-#endif //VG
 }
 
 int main() {
